@@ -1,0 +1,210 @@
+# Port of HTTP(S) proxy server on the local end
+# port: 7890
+
+# Port of SOCKS5 proxy server on the local end
+# socks-port: 7891
+
+# Transparent proxy server port for Linux and macOS
+# redir-port: 7892
+
+# HTTP(S) and SOCKS5 server on the same port
+mixed-port: 7890
+
+# authentication of local SOCKS5/HTTP(S) server
+# authentication:
+#  - "user1:pass1"
+#  - "user2:pass2"
+
+# Set to true to allow connections to local-end server from
+# other LAN IP addresses
+allow-lan: true
+
+# This is only applicable when `allow-lan` is `true`
+# '*': bind all IP addresses
+# 192.168.122.11: bind a single IPv4 address
+# "[aaaa::a8aa:ff:fe09:57d8]": bind a single IPv6 address
+bind-address: '127.0.0.1'
+
+# Clash router working mode
+# rule: rule-based packet routing
+# global: all packets will be forwarded to a single endpoint
+# direct: directly forward the packets to the Internet
+mode: rule
+
+# Clash by default prints logs to STDOUT
+# info / warning / error / debug / silent
+log-level: warning
+
+# When set to false, resolver won't translate hostnames to IPv6 addresses
+ipv6: true
+
+# RESTful web API listening address
+external-controller: 127.0.0.1:9090
+
+# A relative path to the configuration directory or an absolute path to a
+# directory in which you put some static web resource. Clash core will then
+# serve it at `${API}/ui`.
+# external-ui: folder
+
+# Secret for the RESTful API (optional)
+# Authenticate by spedifying HTTP header `Authorization: Bearer ${secret}`
+# ALWAYS set a secret if RESTful API is listening on 0.0.0.0
+# secret: ""
+
+# Outbound interface name
+# interface-name: en0
+
+# Static hosts for DNS server and connection establishment, only works
+# when `dns.enhanced-mode` is `redir-host`.
+#
+# Wildcard hostnames are supported (e.g. *.clash.dev, *.foo.*.example.com)
+# Non-wildcard domain names has a higher priority than wildcard domain names
+# e.g. foo.example.com > *.example.com > .example.com
+# P.S. +.foo.com equals to .foo.com and foo.com
+hosts:
+  'mtalk.google.com': 108.177.125.188
+  # '*.clash.dev': 127.0.0.1
+  # '.dev': 127.0.0.1
+  # 'alpha.clash.dev': '::1'
+
+profile:
+  # Store the `select` results in $HOME/.config/clash/.cache
+  # set false If you don't want this behavior
+  # when two different configurations have groups with the same name, the selected values are shared
+  store-selected: true
+
+  # persistence fakeip
+  store-fake-ip: true
+
+
+# DNS server settings
+# This section is optional. When not present, DNS server will be disabled.
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16 # Fake IP addresses pool CIDR
+  default-nameserver:
+    - 114.114.114.114
+    - 8.8.8.8
+  nameserver:
+  - tls://dns.rubyfish.cn:853
+  - https://1.1.1.1/dns-query
+  - https://doh.dns.sb/dns-query
+  - https://dns.adguard.com/dns-query
+  - https://cdn-doh.ssnm.xyz/dns-query
+  - https://dns.rubyfish.cn/dns-query
+  - https://223.5.5.5/dns-query
+  - https://dns.pub/dns-query
+  - 119.29.29.29 #腾讯
+  - 223.5.5.5 #阿里
+
+  fallback:
+    - tls://one.one.one.one:853
+    - tls://dns.google:853
+    - https://dns.twnic.tw/dns-query
+    - https://dns.adguard.com/dns-query
+    - https://doh.dns.sb/dns-query
+# interface-name: en0 # 出口网卡名称，或者使用下方的自动检测
+  fallback-filter:
+    geoip: true
+    ipcidr:
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+      - 127.0.0.1/32
+
+
+tun:
+  enable: true
+  stack: gvisor  #or gvisor
+  dns-hijack:
+    - 198.18.0.2:53
+  auto-route: true
+  auto-detect-interface: true # 自动检测出口网卡
+
+
+  # Hostnames in this list will not be resolved with fake IPs
+  # i.e. questions to these domain names will always be answered with their
+  # real IP addresses
+  # fake-ip-filter:
+  #   - '*.lan'
+  #   - localhost.ptlogin2.qq.com
+
+  # # Supports UDP, TCP, DoT, DoH. You can specify the port to connect to.
+  # # All DNS questions are sent directly to the nameserver, without proxies
+  # # involved. Clash answers the DNS question with the first result gathered.
+  # nameserver:
+  #   - 114.114.114.114 # default value
+  #   - 8.8.8.8 # default value
+  #   - tls://dns.rubyfish.cn:853 # DNS over TLS
+  #   - https://1.1.1.1/dns-query # DNS over HTTPS
+
+  # When `fallback` is present, the DNS server will send concurrent requests
+  # to the servers in this section along with servers in `nameservers`.
+  # The answers from fallback servers are used when the GEOIP country
+  # is not `CN`.
+  # fallback:
+  #   - tcp://1.1.1.1
+
+  # If IP addresses resolved with servers in `nameservers` are in the specified
+  # subnets below, they are considered invalid and results from `fallback`
+  # servers are used instead.
+  #
+  # IP address resolved with servers in `nameserver` is used when
+  # `fallback-filter.geoip` is true and when GEOIP of the IP address is `CN`.
+  #
+  # If `fallback-filter.geoip` is false, results from `fallback` nameservers
+  # are always used, and answers from `nameservers` are discarded.
+  #
+  # This is a countermeasure against DNS pollution attacks.
+  # fallback-filter:
+  #   geoip: true
+  #   ipcidr:
+  #     - 240.0.0.0/4
+
+proxies: ~
+
+# 服务器节点订阅
+proxy-providers:
+  # name: # Provider 名称
+  #   type: http # http 或 file
+  #   path: # 文件路径
+  #   url: # 只有当类型为 HTTP 时才可用，您不需要在本地空间中创建新文件。
+  #   interval: # 自动更新间隔，仅在类型为 HTTP 时可用
+  #   health-check: # 健康检查选项从此处开始
+  #     enable:
+  #     url:
+  #     interval:
+
+  #
+  # 「url」参数填写订阅链接
+  #
+  # 订阅链接可以使用 API 进行转换，如：https://sub.dler.io/
+  #
+  # 1.模式选择「进阶模式」 2.填写订阅链接 3.勾选「输出为 Node List」 4.「生成订阅链接」
+  #
+
+  my-sub:
+    type: http
+    url: "https://{{ request.sub.host }}/sub?target=clash&list=true&sort=true&emoji=false&udp=false&url=https://subs.zsedc3.workers.dev/clash?token={{ request.sub.token }}"
+    interval: 186400
+    path: ./Proxy/Mine2.yaml # 不同机场不同命名
+    health-check:
+      enable: true
+      interval: 600
+      url: http://www.gstatic.com/generate_204
+
+  free-sub:
+    type: http
+    url: "https://{{ request.sub.host }}/sub?target=clash&rename=github.com%2Ffreefq%20-%20@&url=https://github.com/freefq/free/blob/master/v2?raw=true&list=true"
+    interval: 3600
+    path: ./Proxy/freefq.yaml # 不同机场不同命名
+    health-check:
+      enable: true
+      interval: 600
+      url: http://www.gstatic.com/generate_204
+
+# 规则组
+proxy-groups: ~
+
+# 规则
+rules: ~
