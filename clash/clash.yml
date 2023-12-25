@@ -1,205 +1,128 @@
-# Port of HTTP(S) proxy server on the local end
-# port: 7890
-
-# Port of SOCKS5 proxy server on the local end
-# socks-port: 7891
-
-# Transparent proxy server port for Linux and macOS
-# redir-port: 7892
-
-# HTTP(S) and SOCKS5 server on the same port
 mixed-port: 7890
-
-# authentication of local SOCKS5/HTTP(S) server
-# authentication:
-#  - "user1:pass1"
-#  - "user2:pass2"
-
-# Set to true to allow connections to local-end server from
-# other LAN IP addresses
-allow-lan: true
-
-# This is only applicable when `allow-lan` is `true`
-# '*': bind all IP addresses
-# 192.168.122.11: bind a single IPv4 address
-# "[aaaa::a8aa:ff:fe09:57d8]": bind a single IPv6 address
-bind-address: '127.0.0.1'
-
-# Clash router working mode
-# rule: rule-based packet routing
-# global: all packets will be forwarded to a single endpoint
-# direct: directly forward the packets to the Internet
+allow-lan: false
+bind-address: 127.0.0.1
 mode: rule
-
-# Clash by default prints logs to STDOUT
-# info / warning / error / debug / silent
 log-level: warning
-
-# When set to false, resolver won't translate hostnames to IPv6 addresses
-ipv6: true
-
-# RESTful web API listening address
+ipv6: {{ request.ipv6 }}
+geox-url:
+  mmdb: https://fastly.jsdelivr.net/gh/Dreamacro/maxmind-geoip@release/Country.mmdb
 external-controller: 127.0.0.1:9090
-
-# A relative path to the configuration directory or an absolute path to a
-# directory in which you put some static web resource. Clash core will then
-# serve it at `${API}/ui`.
-# external-ui: folder
-
-# Secret for the RESTful API (optional)
-# Authenticate by spedifying HTTP header `Authorization: Bearer ${secret}`
-# ALWAYS set a secret if RESTful API is listening on 0.0.0.0
-# secret: ""
-
-# Outbound interface name
-# interface-name: en0
-
-# Static hosts for DNS server and connection establishment, only works
-# when `dns.enhanced-mode` is `redir-host`.
-#
-# Wildcard hostnames are supported (e.g. *.clash.dev, *.foo.*.example.com)
-# Non-wildcard domain names has a higher priority than wildcard domain names
-# e.g. foo.example.com > *.example.com > .example.com
-# P.S. +.foo.com equals to .foo.com and foo.com
 hosts:
-  'mtalk.google.com': 108.177.125.188
-  # '*.clash.dev': 127.0.0.1
-  # '.dev': 127.0.0.1
-  # 'alpha.clash.dev': '::1'
-
+  mtalk.google.com: 108.177.125.188
 profile:
-  # Store the `select` results in $HOME/.config/clash/.cache
-  # set false If you don't want this behavior
-  # when two different configurations have groups with the same name, the selected values are shared
   store-selected: true
-
-  # persistence fakeip
   store-fake-ip: true
-
-
-# DNS server settings
-# This section is optional. When not present, DNS server will be disabled.
 dns:
   enable: true
   listen: 0.0.0.0:53
+  ipv6: {{ request.ipv6 }}
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
-  # 用于连接到加密 DNS 服务时，解析服务器本身的域名
   default-nameserver:
-    - 114.114.114.114
+    - 1.1.1.1
     - 8.8.8.8
-    - 223.5.5.5
-  # 解析国内域名时使用加密 DNS 服务器
   nameserver:
     - https://dns.alidns.com/dns-query
     - https://doh.pub/dns-query
-  # 提供 fallback 时，如果GEOIP非 CN 中国时使用 fallback 解析
+  fake-ip-filter:
+    - controlplane.tailscale.com
+    - log.tailscale.io
   fallback:
-    - https://1.1.1.1/dns-query
-    - https://dns.google/dns-query
-    - 1.1.1.1
-    - 8.8.8.8
-  # 强制DNS解析使用`fallback`配置
+    - https://1.0.0.1/dns-query
+    - https://208.67.222.222/dns-query
+    - https://9.9.9.9/dns-query
+    - https://sky.rethinkdns.com/1:6AcDACIBLIDAAFQwIAAACA==
   fallback-filter:
-    # true: CN使用nameserver解析，非CN使用fallback
     geoip: true
-    # geoip设置为false时有效： 不匹配`ipcidr`地址时会使用`nameserver`结果，匹配`ipcidr`地址时使用`fallback`结果。
+    geoip-code: CN
     ipcidr:
       - 240.0.0.0/4
-
-
 tun:
   enable: true
-  stack: gvisor  #or gvisor
+  stack: gvisor
   dns-hijack:
     - 198.18.0.2:53
   auto-route: true
-  auto-detect-interface: true # 自动检测出口网卡
-
-
-  # Hostnames in this list will not be resolved with fake IPs
-  # i.e. questions to these domain names will always be answered with their
-  # real IP addresses
-  # fake-ip-filter:
-  #   - '*.lan'
-  #   - localhost.ptlogin2.qq.com
-
-  # # Supports UDP, TCP, DoT, DoH. You can specify the port to connect to.
-  # # All DNS questions are sent directly to the nameserver, without proxies
-  # # involved. Clash answers the DNS question with the first result gathered.
-  # nameserver:
-  #   - 114.114.114.114 # default value
-  #   - 8.8.8.8 # default value
-  #   - tls://dns.rubyfish.cn:853 # DNS over TLS
-  #   - https://1.1.1.1/dns-query # DNS over HTTPS
-
-  # When `fallback` is present, the DNS server will send concurrent requests
-  # to the servers in this section along with servers in `nameservers`.
-  # The answers from fallback servers are used when the GEOIP country
-  # is not `CN`.
-  # fallback:
-  #   - tcp://1.1.1.1
-
-  # If IP addresses resolved with servers in `nameservers` are in the specified
-  # subnets below, they are considered invalid and results from `fallback`
-  # servers are used instead.
-  #
-  # IP address resolved with servers in `nameserver` is used when
-  # `fallback-filter.geoip` is true and when GEOIP of the IP address is `CN`.
-  #
-  # If `fallback-filter.geoip` is false, results from `fallback` nameservers
-  # are always used, and answers from `nameservers` are discarded.
-  #
-  # This is a countermeasure against DNS pollution attacks.
-  # fallback-filter:
-  #   geoip: true
-  #   ipcidr:
-  #     - 240.0.0.0/4
-
-proxies: ~
-
-# 服务器节点订阅
+  auto-detect-interface: true
+proxies:
+  - {name: Mitm, server: 127.0.0.1, port: 2080, type: socks5, skip-cert-verify: true}
 proxy-providers:
-  # name: # Provider 名称
-  #   type: http # http 或 file
-  #   path: # 文件路径
-  #   url: # 只有当类型为 HTTP 时才可用，您不需要在本地空间中创建新文件。
-  #   interval: # 自动更新间隔，仅在类型为 HTTP 时可用
-  #   health-check: # 健康检查选项从此处开始
-  #     enable:
-  #     url:
-  #     interval:
-
-  #
-  # 「url」参数填写订阅链接
-  #
-  # 订阅链接可以使用 API 进行转换，如：https://sub.dler.io/
-  #
-  # 1.模式选择「进阶模式」 2.填写订阅链接 3.勾选「输出为 Node List」 4.「生成订阅链接」
-  #
-
   my-sub:
     type: http
-    url: "https://{{ request.sub.host }}/sub?target=clash&list=true&sort=true&emoji=false&udp=false&url=https://subs.zsedc3.workers.dev/clash?token={{ request.sub.token }}"
+    url: https://{{ request.sub.host }}/sub?target=clash&list=true&sort=true&emoji=false&udp=false&url=
     interval: 186400
-    path: ./Proxy/Mine2.yaml # 不同机场不同命名
+    path: ./proxies/Mine.yaml
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
-
   free-sub:
     type: http
-    url: "https://{{ request.sub.host }}/sub?target=clash&rename=github.com%2Ffreefq%20-%20@&url=https://github.com/freefq/free/blob/master/v2?raw=true&list=true"
+    url: https://{{ request.sub.host }}/sub?target=clash&rename=github.com%2Ffreefq%20-%20@&url=https://github.com/freefq/free/blob/master/v2?raw=true&list=true
     interval: 3600
-    path: ./Proxy/freefq.yaml # 不同机场不同命名
+    path: ./proxies/free.yaml
     health-check:
       enable: true
       interval: 600
       url: http://www.gstatic.com/generate_204
-
-# 规则组
 proxy-groups: ~
-
-# 规则
-rules: ~
+rule-providers:
+  Apple:
+    type: http
+    behavior: classical
+    url: https://fastly.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Extra/Apple/Apple.yaml
+    path: ./rules/Apple.yaml
+    interval: 86400
+  Telegram:
+    type: http
+    behavior: classical
+    url: https://fastly.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Extra/Telegram/Telegram.yaml
+    path: ./rules/Telegram.yaml
+    interval: 86400
+  Hijacking:
+    type: http
+    behavior: classical
+    url: https://fastly.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Guard/Hijacking.yaml
+    path: ./rules/Hijacking.yaml
+    interval: 86400
+  Unbreak:
+    type: http
+    behavior: classical
+    path: ./rules/Unbreak.yaml
+    url: https://fastly.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Unbreak.yaml
+    interval: 86400
+  Global:
+    type: http
+    behavior: classical
+    path: ./rules/Global.yaml
+    url: https://fastly.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Global.yaml
+    interval: 86400
+  PT:
+    type: http
+    behavior: classical
+    path: ./rules/PT.yaml
+    url: https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/PrivateTracker/PrivateTracker.yaml
+    interval: 86400
+  LAN:
+    type: http
+    behavior: classical
+    url: https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Lan/Lan.yaml
+    path: ./rules/LAN.yaml
+    interval: 86400
+  Speedtest:
+    type: http
+    behavior: classical
+    url: https://fastly.jsdelivr.net/gh/Semporia/Clash@master/Rule/Speedtest.yaml
+    path: ./rules/Speedtest.yaml
+    interval: 86400
+rules:
+  - RULE-SET,Apple,DIRECT
+  - RULE-SET,Telegram,for-select
+  - RULE-SET,Hijacking,REJECT
+  - RULE-SET,Unbreak,PROXY
+  - RULE-SET,Global,PROXY
+  - RULE-SET,PT,PROXY
+  - RULE-SET,LAN,DIRECT
+  - RULE-SET,Speedtest,for-select
+  - GEOIP,CN,DIRECT
+  - MATCH,final
