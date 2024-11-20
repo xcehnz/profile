@@ -62,7 +62,7 @@ proxies:
 proxy-providers:
   my-sub:
     type: http
-    url: https://{{ request.sub.host }}/sub?target=clash&list=true&sort=true&emoji=false&udp=true&url=
+    url: https://{{ request.sub.host }}/sub?target=clash&list=true&sort=true&emoji=false&udp=true&url={{ request.suburl }}
     interval: 186400
     path: ./proxies/my.yaml
     health-check:
