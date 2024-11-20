@@ -132,7 +132,7 @@ rule-providers:
   Adaway:
     type: http
     behavior: classical
-    url: https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@main/rule/Clash/Advertising/Advertising_No_Resolve.yaml
+    url: https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Advertising/Advertising_No_Resolve.yaml
     path: ./rules/ad.yaml
     interval: 86400
 
